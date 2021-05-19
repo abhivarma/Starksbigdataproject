@@ -1,0 +1,132 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2580
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\froman\fcharset0 TimesNewRomanPSMT;\f1\froman\fcharset0 Times-Roman;}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\*\expandedcolortbl;;\cssrgb\c0\c0\c0;}
+\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\deftab720
+\pard\pardeftab720\sl331\sa320\partightenfactor0
+
+\f0\fs24 \cf2 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 import sys
+\f1 \
+
+\f0 from awsglue.transforms import *
+\f1 \
+
+\f0 from awsglue.utils import getResolvedOptions
+\f1 \
+
+\f0 from pyspark.context import SparkContext
+\f1 \
+
+\f0 from awsglue.context import GlueContext
+\f1 \
+
+\f0 from awsglue.job import Job
+\f1 \
+
+\f0 \'a0
+\f1 \
+
+\f0 ## @params: [TempDir, JOB_NAME]
+\f1 \
+
+\f0 args = getResolvedOptions(sys.argv, ['TempDir','JOB_NAME'])
+\f1 \
+
+\f0 \'a0
+\f1 \
+
+\f0 sc = SparkContext()
+\f1 \
+
+\f0 glueContext = GlueContext(sc)
+\f1 \
+
+\f0 spark = glueContext.spark_session
+\f1 \
+
+\f0 job = Job(glueContext)
+\f1 \
+
+\f0 job.init(args['JOB_NAME'], args)
+\f1 \
+
+\f0 ## @type: DataSource
+\f1 \
+
+\f0 ## @args: [database = "csvs3", table_name = "cleaned_demographics_csv", transformation_ctx = "datasource0"]
+\f1 \
+
+\f0 ## @return: datasource0
+\f1 \
+
+\f0 ## @inputs: []
+\f1 \
+
+\f0 datasource0 = glueContext.create_dynamic_frame.from_catalog(database = "csvs3", table_name = "cleaned_demographics_csv", transformation_ctx = "datasource0")
+\f1 \
+
+\f0 ## @type: ApplyMapping
+\f1 \
+
+\f0 ## @args: [mapping = [("city", "string", "city", "string"), ("median age", "double", "median age", "double"), ("male population", "long", "male population", "long"), ("female population", "long", "female population", "long"), ("total population", "long", "total population", "long"), ("state", "string", "state", "string")], transformation_ctx = "applymapping1"]
+\f1 \
+
+\f0 ## @return: applymapping1
+\f1 \
+
+\f0 ## @inputs: [frame = datasource0]
+\f1 \
+
+\f0 applymapping1 = ApplyMapping.apply(frame = datasource0, mappings = [("city", "string", "city", "string"), ("median age", "double", "median age", "double"), ("male population", "long", "male population", "long"), ("female population", "long", "female population", "long"), ("total population", "long", "total population", "long"), ("state", "string", "state", "string")], transformation_ctx = "applymapping1")
+\f1 \
+
+\f0 ## @type: ResolveChoice
+\f1 \
+
+\f0 ## @args: [choice = "make_cols", transformation_ctx = "resolvechoice2"]
+\f1 \
+
+\f0 ## @return: resolvechoice2
+\f1 \
+
+\f0 ## @inputs: [frame = applymapping1]
+\f1 \
+
+\f0 resolvechoice2 = ResolveChoice.apply(frame = applymapping1, choice = "make_cols", transformation_ctx = "resolvechoice2")
+\f1 \
+
+\f0 ## @type: DropNullFields
+\f1 \
+
+\f0 ## @args: [transformation_ctx = "dropnullfields3"]
+\f1 \
+
+\f0 ## @return: dropnullfields3
+\f1 \
+
+\f0 ## @inputs: [frame = resolvechoice2]
+\f1 \
+
+\f0 dropnullfields3 = DropNullFields.apply(frame = resolvechoice2, transformation_ctx = "dropnullfields3")
+\f1 \
+
+\f0 ## @type: DataSink
+\f1 \
+
+\f0 ## @args: [catalog_connection = "S3toRedshift", connection_options = \{"dbtable": "cleaned_demographics_csv", "database": "dev"\}, redshift_tmp_dir = TempDir, transformation_ctx = "datasink4"]
+\f1 \
+
+\f0 ## @return: datasink4
+\f1 \
+
+\f0 ## @inputs: [frame = dropnullfields3]
+\f1 \
+
+\f0 datasink4 = glueContext.write_dynamic_frame.from_jdbc_conf(frame = dropnullfields3, catalog_connection = "S3toRedshift", connection_options = \{"dbtable": "cleaned_demographics_csv", "database": "dev"\}, redshift_tmp_dir = args["TempDir"], transformation_ctx = "datasink4")
+\f1 \
+
+\f0 job.commit()
+\f1 \
+}
